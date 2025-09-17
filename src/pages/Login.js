@@ -1,17 +1,16 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  Alert, 
-  StyleSheet 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Mail, Eye, EyeOff } from "lucide-react-native"; 
-import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ For token storage
-import API from "../services/api"; 
-
+import { Mail, Eye, EyeOff, Lock } from "lucide-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import API from "../services/api";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -25,12 +24,9 @@ export default function Login() {
   const handleSubmit = async () => {
     try {
       const res = await API.post("/auth/login", form);
-
-      // ✅ Save token in AsyncStorage
       await AsyncStorage.setItem("token", res.data.token);
-
       Alert.alert("✅ Success", "Logged in successfully!");
-      navigation.replace('MainTabs');
+      navigation.replace("MainTabs");
     } catch (err) {
       Alert.alert("❌ Error", err.response?.data?.msg || "Login failed");
     }
@@ -40,12 +36,13 @@ export default function Login() {
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Welcome Back 👋</Text>
+        <Text style={styles.subtitle}>Login to continue</Text>
 
         {/* Email */}
         <View style={styles.inputGroup}>
-          <Mail size={20} color="#555" />
+          <Mail size={20} color="#007bff" />
           <TextInput
-            placeholder="you@example.com"
+            placeholder="Email Address"
             keyboardType="email-address"
             autoCapitalize="none"
             style={styles.input}
@@ -56,15 +53,20 @@ export default function Login() {
 
         {/* Password */}
         <View style={styles.inputGroup}>
+          <Lock size={20} color="#007bff" />
           <TextInput
-            placeholder="••••••••"
+            placeholder="Password"
             secureTextEntry={!showPassword}
             style={styles.input}
             value={form.password}
             onChangeText={(text) => handleChange("password", text)}
           />
           <TouchableOpacity onPress={() => setShowPassword((s) => !s)}>
-            {showPassword ? <EyeOff size={20} color="#555" /> : <Eye size={20} color="#555" />}
+            {showPassword ? (
+              <EyeOff size={20} color="#007bff" />
+            ) : (
+              <Eye size={20} color="#007bff" />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -74,7 +76,7 @@ export default function Login() {
             <Text style={styles.remember}>Remember me</Text>
           </TouchableOpacity>
           <TouchableOpacity>
-            <Text style={styles.forgot}>Forgot?</Text>
+            <Text style={styles.forgot}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
 
@@ -86,7 +88,7 @@ export default function Login() {
         {/* Switch to Register */}
         <Text style={styles.switchText}>
           Don’t have an account?{" "}
-          <Text 
+          <Text
             style={styles.switchLink}
             onPress={() => navigation.navigate("Register")}
           >
@@ -103,38 +105,46 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#e9f0ff", // light gradient-like feel
     padding: 20,
   },
   card: {
     width: "100%",
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 25,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 6,
   },
   title: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 5,
     textAlign: "center",
+    color: "#007bff",
+  },
+  subtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#555",
   },
   inputGroup: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderColor: "#cdd9ed",
+    borderRadius: 10,
+    paddingHorizontal: 12,
     marginBottom: 15,
+    backgroundColor: "#f8faff",
   },
   input: {
     flex: 1,
-    padding: 10,
-    fontSize: 16,
+    padding: 12,
+    fontSize: 15,
   },
   options: {
     flexDirection: "row",
@@ -143,22 +153,26 @@ const styles = StyleSheet.create({
   },
   remember: {
     fontSize: 14,
-    color: "#555",
+    color: "#444",
   },
   forgot: {
     fontSize: 14,
     color: "#007bff",
+    fontWeight: "600",
   },
   submitBtn: {
     backgroundColor: "#007bff",
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: "center",
     marginBottom: 15,
+    shadowColor: "#007bff",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   submitText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "bold",
   },
   switchText: {

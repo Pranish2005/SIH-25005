@@ -1,9 +1,13 @@
+# yolov8_model/interface.py
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+import os
+
+# Import your detector utility
+from yolov8_model.detector import run_inference
 
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -12,27 +16,21 @@ app.add_middleware(
 )
 
 class ClassificationResult(BaseModel):
-    measurements: dict
-    scores: dict
-    annotations: str = None
+    detections: list
+    # add more fields as needed, e.g., measurements, scores, etc.
 
 @app.post("/classify-photo/", response_model=ClassificationResult)
 async def classify_photo(file: UploadFile = File(...)):
-    # Read the image to simulate processing (optional)
-    _ = await file.read()
-
-    # Return fixed dummy measurements and scores
+    # Save the incoming file to disk
+    temp_path = "temp_upload.jpg"
+    contents = await file.read()
+    with open(temp_path, "wb") as f:
+        f.write(contents)
+    # Run YOLO inference
+    detections = run_inference(temp_path)
+    # Clean up temp file
+    os.remove(temp_path)
+    # Return results
     return ClassificationResult(
-        measurements={
-            "body_length_cm": 170,
-            "height_cm": 140,
-            "rump_angle_deg": 15,
-        },
-        scores={
-            "Body Length": "8/9",
-            "Height": "7/9",
-            "Dairy Character": "6/9",
-            "Foot & Leg Angle": "8/9",
-        },
-        annotations=None,  # Or provide a sample annotation image/base64 if you want
+        detections=detections
     )

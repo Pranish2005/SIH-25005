@@ -1,14 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, Text, TouchableOpacity, FlatList, Image, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import API from "../services/api";
 
@@ -22,7 +13,7 @@ const Home = ({ navigation }) => {
 
   const fetchRecentScans = async () => {
     try {
-      const response = await API.get("/auth/recent-scans"); // Adjust endpoint
+      const response = await API.get("/scans/recent-scans"); // Adjust endpoint
       setRecentScans(response.data.scans || []);
     } catch (error) {
       console.error(error);

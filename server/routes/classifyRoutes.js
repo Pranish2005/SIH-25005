@@ -9,18 +9,14 @@ const upload = multer();
 
 router.post('/classify-photo', upload.single('file'), async (req, res) => {
   try {
-    // Forward the uploaded image buffer to YOLOv8 FastAPI server
-    const response = await axios.post(
-      'http://10.197.38.240:8000/classify-photo/', // Change to your actual FastAPI URL & port
-      req.file.buffer,
-      {
-        headers: {
-          'Content-Type': req.file.mimetype,
-        },
-      }
-    );
+    const formData = new FormData();
+    formData.append('file', req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
 
-    // Send back AI classification response to mobile app
+    const response = await axios.post(
+      'http://10.197.38.240:8000/classify-photo/',
+      formData,
+      { headers: formData.getHeaders() }
+    );
     res.json(response.data);
   } catch (error) {
     console.error('Error forwarding to YOLOv8 inference:', error.message || error);
