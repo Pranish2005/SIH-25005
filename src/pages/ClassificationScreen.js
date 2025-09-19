@@ -53,8 +53,8 @@ export default function ClassificationScreen({ navigation }) {
     try {
       setLoading(true);
       const response = await classifyPhoto(imageUri);
-      setScores(response.scores || {});
-      setAnnotations(response.annotations || null);
+      setScores(response.detections || []);
+      setAnnotations(null);
       setSummary(response.summary || null);
     } catch (error) {
       Alert.alert("Error", "Failed to classify image. Try again.");
@@ -94,13 +94,17 @@ export default function ClassificationScreen({ navigation }) {
     setSummary(null);
   };
 
-  // Render score rows
-  const renderScoreItem = ({ item }) => (
-    <View style={styles.scoreRow}>
-      <Text style={styles.scoreTrait}>{item[0]}</Text>
-      <Text style={styles.scoreValue}>{item[1]}</Text>
-    </View>
-  );
+const renderScoreItem = ({ item }) => (
+  <View style={styles.scoreRow}>
+    <Text style={styles.scoreTrait}>{item.class}</Text>
+    <Text style={styles.scoreValue}>
+      {`Conf: ${(item.score * 100).toFixed(1)}% | W: ${item.cm_width ? item.cm_width + " cm" : item.pixel_width + " px"} | H: ${item.cm_height ? item.cm_height + " cm" : item.pixel_height + " px"}`}
+    </Text>
+  </View>
+);
+
+
+
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -175,12 +179,13 @@ export default function ClassificationScreen({ navigation }) {
               <View style={styles.resultsCard}>
                 <Text style={styles.sectionHeader}>Classification Results</Text>
                 <FlatList
-                  data={Object.entries(scores)}
+                  data={scores}
                   renderItem={renderScoreItem}
-                  keyExtractor={(item) => item[0]}
+                  keyExtractor={(item, index) => index.toString()}
                   scrollEnabled={false}
                   showsVerticalScrollIndicator={false}
                 />
+
               </View>
             )}
 

@@ -14,13 +14,14 @@ import {
 import { MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { getRecentHistory } from "../services/api";
 import { useNavigation } from "@react-navigation/native";
+import { useTheme } from "../context/ThemeContext";
 
 const { width } = Dimensions.get('window');
 
 const Home = ({ navigation }) => {
 
   
-
+  const { isDark } = useTheme();
   const [recentScans, setRecentScans] = useState([]);
   const [stats, setStats] = useState({
     totalScans: 0,
@@ -86,6 +87,8 @@ const Home = ({ navigation }) => {
       <Text style={styles.actionText}>{label}</Text>
     </TouchableOpacity>
   );
+
+  const styles = getStyles(isDark);
 
   const renderScanItem = ({ item }) => (
     <TouchableOpacity 
@@ -224,16 +227,16 @@ const Home = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: isDark ? '#121212' : '#F9FAFB',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: isDark ? '#121212' : '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
@@ -241,25 +244,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingTop: 50,
-    backgroundColor: '#fff',
+    backgroundColor: isDark ? '#1E1E1E' : '#fff',
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: isDark ? 0.3 : 0.05,
     shadowRadius: 10,
+  },
+  greeting: {
+    fontSize: 14,
+    color: isDark ? '#BBBBBB' : '#6B7280',
+    marginBottom: 4,
   },
   headerText: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: isDark ? '#FFFFFF' : '#111827',
   },
   profileBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: isDark ? '#2A2A2A' : '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -314,7 +322,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: isDark ? '#FFFFFF' : '#111827',
+
   },
   seeAll: {
     color: '#4F46E5',
@@ -328,16 +337,16 @@ const styles = StyleSheet.create({
   },
   quickAction: {
     width: '30%',
-    backgroundColor: '#fff',
+    backgroundColor: isDark ? '#1E1E1E' : '#fff',
     borderRadius: 16,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: isDark ? '#333333' : '#E5E7EB',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: isDark ? 0.3 : 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
@@ -352,7 +361,7 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#374151',
+    color: isDark ? '#CCCCCC' : '#374151',
     textAlign: 'center',
     lineHeight: 14,
   },
@@ -361,7 +370,7 @@ const styles = StyleSheet.create({
   },
   scanCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: isDark ? '#1E1E1E' : '#fff',
     borderRadius: 16,
     padding: 12,
     marginBottom: 12,
@@ -369,7 +378,7 @@ const styles = StyleSheet.create({
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: isDark ? 0.3 : 0.05,
     shadowRadius: 4,
   },
   animalImage: {
@@ -385,12 +394,12 @@ const styles = StyleSheet.create({
   animalId: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#111827',
+    color: isDark ? '#FFFFFF' : '#111827',
     marginBottom: 2,
   },
   animalBreed: {
     fontSize: 14,
-    color: '#4B5563',
+    color: isDark ? '#BBBBBB' : '#4B5563',
     marginBottom: 4,
   },
   scanDate: {
@@ -399,11 +408,11 @@ const styles = StyleSheet.create({
   },
   animalDate: {
     fontSize: 12,
-    color: '#6B7280',
+    color: isDark ? '#AAAAAA' : '#6B7280',
     marginLeft: 4,
   },
   emptyState: {
-    backgroundColor: '#fff',
+    backgroundColor: isDark ? '#1E1E1E' : '#fff',
     borderRadius: 16,
     padding: 32,
     alignItems: 'center',
@@ -414,13 +423,13 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: isDark ? '#FFFFFF' : '#111827',
     marginTop: 12,
     marginBottom: 4,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#6B7280',
+    color: isDark ? '#BBBBBB' : '#6B7280',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -437,6 +446,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  newClassBtn: { backgroundColor: "#2cb93d", paddingVertical: 15, borderRadius: 8, alignItems: "center", marginBottom: 18 },
+  classBtnText: { fontSize: 18, color: "#fff", fontWeight: "bold" },
+  sectionHeader: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
 });
 
 export default Home;
