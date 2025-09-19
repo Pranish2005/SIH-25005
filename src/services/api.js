@@ -40,4 +40,28 @@ export const classifyPhoto = async (imageUri) => {
   }
 };
 
+// Save classification data for current user
+export const saveClassification = async (data) => {
+  try {
+    const response = await API.post("/history/save", data);
+    return response.data;
+  } catch (error) {
+    console.error("Error saving classification:", error);
+    throw error;
+  }
+};
+
+// Fetch recent classification history for current user
+export const getRecentHistory = async () => {
+  try {
+    const response = await API.get("/history/recent");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching recent history:", error);
+    throw error;
+  }
+};
+
+
+
 export default API;
