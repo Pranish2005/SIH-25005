@@ -51,7 +51,12 @@ async def classify_photo(file: UploadFile = File(...), pixels_per_cm: float = Bo
     detections = result.get("detections", [])
     print(f"Detections count: {len(detections)}")
 
+# Add +100 to the cm_width and cm_height in every detection
     for det in detections:
+        if det.get("cm_width") is not None:
+            det["cm_width"] = round(det["cm_width"] + 100, 2)
+        if det.get("cm_height") is not None:
+            det["cm_height"] = round(det["cm_height"] + 100, 2)
         print(f"Detected {det['class']} - pixel size ({det['pixel_width']}x{det['pixel_height']}) cm size ({det.get('cm_width')}x{det.get('cm_height')})")
 
     class_counts = {}

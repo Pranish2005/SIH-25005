@@ -2,7 +2,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API = axios.create({ baseURL: "http://10.197.38.240:5000/api" });
+const API = axios.create({ baseURL: "http://10.193.99.240:5000/api" });
 
 // Attach token if available (only for Node backend)
 API.interceptors.request.use(async (req) => {
@@ -18,7 +18,7 @@ API.interceptors.request.use(async (req) => {
 });
 
 // 🟢 Separate client for YOLOv8 FastAPI
-const YOLO_API = axios.create({ baseURL: "http://10.197.38.240:8000" });
+const YOLO_API = axios.create({ baseURL: "http://10.193.99.240:8000" });
 
 // Upload photo to YOLOv8 server
 export const classifyPhoto = async (imageUri) => {
