@@ -15,7 +15,7 @@ router.post('/classify-photo', upload.single('file'), async (req, res) => {
     formData.append('file', req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
 
     const response = await axios.post(
-      'http://10.193.99.240:8000/classify-photo/',
+      'http://192.168.137.1:8000/classify-photo/',
       formData,
       { headers: formData.getHeaders() }
     );

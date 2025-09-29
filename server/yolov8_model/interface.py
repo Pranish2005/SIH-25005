@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Body
+from fastapi import FastAPI, UploadFile, File, Body, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import time
@@ -40,7 +40,7 @@ def to_base64_jpeg(bgr):
 @app.post("/classify-photo/", response_model=ClassificationResult)
 async def classify_photo(
     file: UploadFile = File(...),
-    pixels_per_cm: float = Body(default=37.79)
+    pixels_per_cm: float = Body(default=0.0)
 ):
     start_time = time.time()
     contents = await file.read()
@@ -48,6 +48,10 @@ async def classify_photo(
     # Read frame as BGR
     frame = read_imagefile(contents)
     H, W = frame.shape[:2]
+
+    # Require valid calibration for real cm
+    if pixels_per_cm is None or pixels_per_cm <= 0:
+        raise HTTPException(status_code=400, detail="Missing or invalid pixels_per_cm. Run calibration first.")
 
     # Run pipeline with calibration (no artificial offsets)
     detections, annotated = process_frame_pipeline(frame, pixels_per_cm=pixels_per_cm)
@@ -90,9 +94,39 @@ async def calibrate(file: UploadFile = File(...), real_length_cm: float = Body(.
     rect = cv2.minAreaRect(cnt)
     (cx, cy), (w, h), angle = rect
     pixel_length = max(w, h)  # long side in pixels
-
     if pixel_length < 10:
         return {"error": "Calibration object too small"}
 
     pixels_per_cm = float(pixel_length) / float(real_length_cm)
+    return {"pixels_per_cm": pixels_per_cm}
+
+# Optional: ArUco-based calibration (more robust under varied lighting)
+@app.post("/calibrate-aruco/")
+async def calibrate_aruco(file: UploadFile = File(...), marker_length_cm: float = Body(default=5.0)):
+    contents = await file.read()
+    bgr = read_imagefile(contents)
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+
+    # Requires opencv-contrib-python
+    try:
+        adict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
+        params = cv2.aruco.DetectorParameters()
+        detector = cv2.aruco.ArucoDetector(adict, params)
+        corners, ids, _ = detector.detectMarkers(gray)
+    except Exception as e:
+        return {"error": f"ArUco not available: {e}"}
+
+    if ids is None or len(corners) == 0:
+        return {"error": "No ArUco markers detected"}
+
+    lengths = []
+    for c in corners:
+        pts = c[0]  # 4x2
+        sides = [np.linalg.norm(pts[i]-pts[(i+1)%4]) for i in range(4)]
+        lengths.append(float(np.mean(sides)))
+    pixel_side = float(np.mean(lengths))
+    if pixel_side < 10:
+        return {"error": "Marker too small in image"}
+
+    pixels_per_cm = pixel_side / float(marker_length_cm)
     return {"pixels_per_cm": pixels_per_cm}

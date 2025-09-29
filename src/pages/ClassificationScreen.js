@@ -19,36 +19,106 @@ const TraitLine = ({ label, value, unit, conf }) => {
 };
 
 const DetectionItem = ({ item }) => {
-  const t = item.traits || {};
+  const t = item?.traits || {};
+  const bcs = item?.bcs_score;
+
+  const fmt = (v, d = 2) => (typeof v === "number" ? v.toFixed(d) : null);
+
+  const barColor =
+    bcs >= 3.25 ? "#10B981" : bcs >= 2.5 ? "#F59E0B" : "#EF4444";
+  const barWidth = Math.min(100, Math.max(0, ((bcs || 0) / 5) * 100));
+
   return (
     <View style={styles.detItem}>
-      <Text style={styles.scoreTrait}>{item.class_ || "animal"}</Text>
+      <Text style={styles.scoreTrait}>{item?.class_ || "animal"}</Text>
+
       <Text style={styles.scoreValue}>
-        {`Score: ${(item.score ?? 0).toFixed(2)} | W: ${item.cm_width ?? 0} cm | H: ${item.cm_height ?? 0} cm`}
+        {`Score: ${fmt(item?.score, 2) || "0.00"} | W: ${item?.cm_width ?? 0} cm | H: ${item?.cm_height ?? 0} cm`}
       </Text>
+
+      {/* BCS 1–5 */}
+      {bcs != null && (
+        <View style={{ marginTop: 6 }}>
+          <Text style={[styles.traitText, { fontWeight: "700", color: "#1F2937" }]}>
+            {`BCS: ${fmt(bcs, 2)} / 5`}
+          </Text>
+          <View style={{ height: 8, backgroundColor: "#E5E7EB", borderRadius: 4, marginTop: 4 }}>
+            <View
+              style={{
+                width: `${barWidth}%`,
+                height: "100%",
+                backgroundColor: barColor,
+                borderRadius: 4,
+              }}
+            />
+          </View>
+        </View>
+      )}
+
       <View style={styles.traitsBlock}>
-        <TraitLine label="Chest width" value={t?.chest_width?.cm?.toFixed?.(2)} unit="cm" conf={t?.chest_width?.conf} />
-        <TraitLine label="Front leg" value={t?.front_leg?.cm?.toFixed?.(2)} unit="cm" conf={t?.front_leg?.conf} />
+        <TraitLine
+          label="Chest width"
+          value={fmt(t?.chest_width?.cm, 2)}
+          unit="cm"
+          conf={t?.chest_width?.conf}
+        />
+
+        <TraitLine
+          label="Withers height"
+          value={fmt(t?.withers_height?.cm, 2)}
+          unit="cm"
+          conf={t?.withers_height?.conf}
+        />
+
+        <TraitLine
+          label="Front leg"
+          value={fmt(t?.front_leg?.cm, 2)}
+          unit="cm"
+          conf={t?.front_leg?.conf}
+        />
         {t?.front_leg?.upper_cm != null && (
-          <TraitLine label=" └ upper" value={t.front_leg.upper_cm.toFixed(2)} unit="cm" />
+          <TraitLine label=" └ upper" value={fmt(t.front_leg.upper_cm, 2)} unit="cm" />
         )}
         {t?.front_leg?.lower_cm != null && (
-          <TraitLine label=" └ lower" value={t.front_leg.lower_cm.toFixed(2)} unit="cm" />
+          <TraitLine label=" └ lower" value={fmt(t.front_leg.lower_cm, 2)} unit="cm" />
         )}
-        <TraitLine label="Rear leg" value={t?.rear_leg?.cm?.toFixed?.(2)} unit="cm" conf={t?.rear_leg?.conf} />
+
+        <TraitLine
+          label="Rear leg"
+          value={fmt(t?.rear_leg?.cm, 2)}
+          unit="cm"
+          conf={t?.rear_leg?.conf}
+        />
         {t?.rear_leg?.upper_cm != null && (
-          <TraitLine label=" └ upper" value={t.rear_leg.upper_cm.toFixed(2)} unit="cm" />
+          <TraitLine label=" └ upper" value={fmt(t.rear_leg.upper_cm, 2)} unit="cm" />
         )}
         {t?.rear_leg?.lower_cm != null && (
-          <TraitLine label=" └ lower" value={t.rear_leg.lower_cm.toFixed(2)} unit="cm" />
+          <TraitLine label=" └ lower" value={fmt(t.rear_leg.lower_cm, 2)} unit="cm" />
         )}
-        <TraitLine label="Hock angle" value={t?.hock_angle?.deg?.toFixed?.(1)} unit="deg" conf={t?.hock_angle?.conf} />
-        <TraitLine label="Pastern front" value={t?.pastern_front?.deg?.toFixed?.(1)} unit="deg" conf={t?.pastern_front?.conf} />
-        <TraitLine label="Pastern rear" value={t?.pastern_rear?.deg?.toFixed?.(1)} unit="deg" conf={t?.pastern_rear?.conf} />
+
+        <TraitLine
+          label="Hock angle"
+          value={fmt(t?.hock_angle?.deg, 1)}
+          unit="deg"
+          conf={t?.hock_angle?.conf}
+        />
+        <TraitLine
+          label="Pastern front"
+          value={fmt(t?.pastern_front?.deg, 1)}
+          unit="deg"
+          conf={t?.pastern_front?.conf}
+        />
+        <TraitLine
+          label="Pastern rear"
+          value={fmt(t?.pastern_rear?.deg, 1)}
+          unit="deg"
+          conf={t?.pastern_rear?.conf}
+        />
       </View>
     </View>
   );
 };
+
 
 export default function ClassificationScreen({ navigation }) {
   const [image, setImage] = useState(null);
