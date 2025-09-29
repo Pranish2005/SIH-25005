@@ -72,8 +72,7 @@ export default function ClassificationScreen({ navigation }) {
         return;
       }
 
-      // You can also send measurements and any other relevant data if available
-      const dataToSave = { scores, summary, measurements: {} }; // Assuming 'measurements' is an empty object for this example
+      const dataToSave = { scores, summary, measurements: {} }; // add more data as needed
 
       await saveClassification(dataToSave);
 
@@ -94,17 +93,14 @@ export default function ClassificationScreen({ navigation }) {
     setSummary(null);
   };
 
-const renderScoreItem = ({ item }) => (
-  <View style={styles.scoreRow}>
-    <Text style={styles.scoreTrait}>{item.class}</Text>
-    <Text style={styles.scoreValue}>
-      {`Conf: ${(item.score * 100).toFixed(1)}% | W: ${item.cm_width ? item.cm_width + " cm" : item.pixel_width + " px"} | H: ${item.cm_height ? item.cm_height + " cm" : item.pixel_height + " px"}`}
-    </Text>
-  </View>
-);
-
-
-
+  const renderScoreItem = ({ item }) => (
+    <View style={styles.scoreRow}>
+      <Text style={styles.scoreTrait}>{item.class_}</Text>
+      <Text style={styles.scoreValue}>
+        {`Conf: ${(item.score * 100).toFixed(1)}% | W: ${item.cm_width ? item.cm_width + " cm" : item.pixel_width + " px"} | H: ${item.cm_height ? item.cm_height + " cm" : item.pixel_height + " px"}`}
+      </Text>
+    </View>
+  );
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -185,7 +181,6 @@ const renderScoreItem = ({ item }) => (
                   scrollEnabled={false}
                   showsVerticalScrollIndicator={false}
                 />
-
               </View>
             )}
 
