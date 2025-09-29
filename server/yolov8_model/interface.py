@@ -1,14 +1,12 @@
 from fastapi import FastAPI, UploadFile, File, Body
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-import os
 import time
 import numpy as np
 import cv2
 from io import BytesIO
 from PIL import Image
 from yolov8_model.detector import process_frame_pipeline
-
 
 app = FastAPI()
 app.add_middleware(
@@ -18,103 +16,83 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class Detection(BaseModel):
-    bbox: list
-    score: float
-    class_: str
-    pixel_width: float
-    pixel_height: float
-    cm_width: float = None   # Added for cm measurement
-    cm_height: float = None
-
-
 class ClassificationResult(BaseModel):
     detections: list
-    summary: str = None
+    summary: str | None = None
+    annotated_image: str | None = None  # base64 data URL
 
+def read_imagefile(file_bytes) -> np.ndarray:
+    image = Image.open(BytesIO(file_bytes)).convert('RGB')
+    # Convert to BGR for OpenCV pipeline entry
+    return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
-def read_imagefile(file) -> np.ndarray:
-    image = Image.open(BytesIO(file))
-    image = image.convert('RGB')
-    return np.array(image)
-
+def to_base64_jpeg(bgr):
+    import base64
+    from PIL import Image
+    from io import BytesIO
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    im = Image.fromarray(rgb)
+    buf = BytesIO()
+    im.save(buf, format="JPEG", quality=85)
+    data = base64.b64encode(buf.getvalue()).decode()
+    return f"data:image/jpeg;base64,{data}"
 
 @app.post("/classify-photo/", response_model=ClassificationResult)
-async def classify_photo(file: UploadFile = File(...), pixels_per_cm: float = Body(default=37.79)):
+async def classify_photo(
+    file: UploadFile = File(...),
+    pixels_per_cm: float = Body(default=37.79)
+):
     start_time = time.time()
-    print("Starting /classify-photo endpoint")
-
-    temp_path = "temp_upload.jpg"
-
-    print("Reading uploaded file...")
     contents = await file.read()
-    print(f"Read {len(contents)} bytes")
 
-    print("Writing to temp file...")
-    with open(temp_path, "wb") as f:
-        f.write(contents)
-    print(f"Temp file written at {temp_path}")
-
-    print(f"Starting inference with pixels_per_cm = {pixels_per_cm} ...")
-    inference_start = time.time()
-    frame = cv2.imread(temp_path)
-    scores, annotated = process_frame_pipeline(frame)
-    inference_end = time.time()
-    print(f"Inference completed in {inference_end - inference_start:.2f} seconds")
-
-    detections = []
-    for s in scores:
-        # Example bounding box metadata dummy, replace with your detection bbox info
-        detections.append({
-            "bbox": [0, 0, 0, 0],
-            "score": s["score"],
-            "class_": "cattle",
-            "pixel_width": s["measurements"][0],
-            "pixel_height": s["measurements"][1],
-            "cm_width": round(s["measurements"][0] / pixels_per_cm, 2),
-            "cm_height": round(s["measurements"][1] / pixels_per_cm, 2)
-        })
-
-    # Add +100 to cm_width and cm_height in every detection (as per your note)
-    for det in detections:
-        if det.get("cm_width") is not None:
-            det["cm_width"] = round(det["cm_width"] + 100, 2)
-        if det.get("cm_height") is not None:
-            det["cm_height"] = round(det["cm_height"] + 100, 2)
-        print(f"Detected {det['class_']} - pixel size ({det['pixel_width']}x{det['pixel_height']}) cm size ({det['cm_width']}x{det['cm_height']})")
-
+    # Read frame as BGR
+    frame = read_imagefile(contents)
     H, W = frame.shape[:2]
-    inference_time = (inference_end - inference_start) * 1000  # milliseconds
-    summary = f"Image {W}x{H}, {len(detections)} detections, {inference_time:.1f} ms"
-    print(f"Summary: {summary}")
 
-    print("Removing temp file...")
-    os.remove(temp_path)
-    print("Temp file removed")
+    # Run pipeline with calibration (no artificial offsets)
+    detections, annotated = process_frame_pipeline(frame, pixels_per_cm=pixels_per_cm)
+
+    summary = f"Image {W}x{H}, {len(detections)} detections"
+    annotated_b64 = to_base64_jpeg(annotated)
 
     total_time = time.time() - start_time
     print(f"Total processing time: {total_time:.2f} seconds")
 
     return ClassificationResult(
         detections=detections,
-        summary=summary
+        summary=summary,
+        annotated_image=annotated_b64
     )
-
 
 @app.post("/calibrate/")
 async def calibrate(file: UploadFile = File(...), real_length_cm: float = Body(...)):
-    temp_path = "temp_ref.jpg"
+    # Read image
     contents = await file.read()
-    with open(temp_path, "wb") as f:
-        f.write(contents)
-    
-    frame = cv2.imread(temp_path)
-    # For simplicity, run detection only without full pipeline
-    # You can also call detector.py if preferred
+    bgr = read_imagefile(contents)
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
-    # Dummy detection box pixel width: replace with actual detection logic
-    pixel_width = 100  
-    pixels_per_cm = pixel_width / real_length_cm
-    
-    os.remove(temp_path)
+    # Adjust to your bar color; example for bright green
+    lower = np.array([35, 80, 80], dtype=np.uint8)
+    upper = np.array([85, 255, 255], dtype=np.uint8)
+    mask = cv2.inRange(hsv, lower, upper)
+
+    # Morphology to clean mask
+    kernel = np.ones((3,3), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+    # Find largest contour as bar
+    cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not cnts:
+        return {"error": "Calibration bar not detected"}
+
+    cnt = max(cnts, key=cv2.contourArea)
+    rect = cv2.minAreaRect(cnt)
+    (cx, cy), (w, h), angle = rect
+    pixel_length = max(w, h)  # long side in pixels
+
+    if pixel_length < 10:
+        return {"error": "Calibration object too small"}
+
+    pixels_per_cm = float(pixel_length) / float(real_length_cm)
     return {"pixels_per_cm": pixels_per_cm}
